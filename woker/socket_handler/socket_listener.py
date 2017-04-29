@@ -1,7 +1,7 @@
 from scrapy.crawler import CrawlerProcess
-from us.abc_news.spider import ABCNewsSpider
-from us.cnn.spider import CNNSpider
-from us.daily_news.spider import DailyNewsSpider
+from woker.us.abc_news.spider import ABCNewsSpider
+from woker.us.cnn.spider import CNNSpider
+from woker.us.daily_news.spider import DailyNewsSpider
 import socket
 import json
 

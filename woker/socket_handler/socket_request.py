@@ -1,7 +1,8 @@
 from scrapy.crawler import CrawlerProcess
-from us.abc_news.spider import ABCNewsSpider
-from us.cnn.spider import CNNSpider
-from us.daily_news.spider import DailyNewsSpider
+from woker.us.abc_news.spider import ABCNewsSpider
+from woker.us.cnn.spider import CNNSpider
+from woker.us.daily_news.spider import DailyNewsSpider
+from woker.us.chicago_suntimes.spider import ChicagoSuntimesSpider
 import socket
 import json
 
@@ -29,6 +30,7 @@ def get_spider(base_url):
         'http://abcnews.go.com': ABCNewsSpider,
         'http://edition.cnn.com': CNNSpider,
         'http://www.nydailynews.com': DailyNewsSpider,
+        'http://chicago.suntimes.com': ChicagoSuntimesSpider,
     }.get(base_url, None)
 
 

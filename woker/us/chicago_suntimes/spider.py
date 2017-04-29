@@ -1,9 +1,34 @@
 import datetime
-from distributed_crawler.distributed_crawler import DistributedSpider
+from woker.database.database_connection import NewsData
+import scrapy
+from woker.database import database_connection
 
 
-class ChicagoSuntimesSpider(DistributedSpider):
+class ChicagoSuntimesSpider(scrapy.Spider):
     name = "Chicago_Suntimes"
+    db_session = ''
+    start_urls = []
+    next_urls = []
+
+    @staticmethod
+    def setup(start_urls, db_name):
+        ChicagoSuntimesSpider.db_session = database_connection.create_database_and_connect(db_name)
+        ChicagoSuntimesSpider.start_urls = start_urls
+
+    def parse(self, response):
+        news_title = self.get_title(response)
+        news_time = self.get_time(response)
+        content = self.get_content(response)
+        news_type = self.get_type(response)
+        url = response.url
+
+        if news_title is not None and content is not None and news_time is not None and news_type is not None:
+            news_page_data = NewsData(url=url, title=news_title, content=content,
+                                      time=news_time, type=news_type)
+            ChicagoSuntimesSpider.db_session.add(news_page_data)
+            ChicagoSuntimesSpider.db_session.commit()
+
+            ChicagoSuntimesSpider.next_urls += self.get_next_link_list(response)
 
     @staticmethod
     def get_next_link_list(response):
@@ -66,3 +91,8 @@ class ChicagoSuntimesSpider(DistributedSpider):
             except Exception:
                 return None
         return None
+
+    @staticmethod
+    def get_next_urls():
+        return ChicagoSuntimesSpider.next_urls
+
