@@ -1,7 +1,7 @@
 import datetime
-from database.database_connection import NewsData
+from woker.database.database_connection import NewsData
 import scrapy
-from database import database_connection
+from woker.database import database_connection
 
 
 class ABCNewsSpider(scrapy.Spider):
