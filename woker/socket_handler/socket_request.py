@@ -9,14 +9,6 @@ import json
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-server_address = ('localhost', 11000)
-print 'woker server starting up on %s port %s' % server_address
-sock.bind(server_address)
-
-# Listen for incoming connections
-sock.listen(1)
-
-
 def connect_server(ip, port):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,10 +82,11 @@ if __name__ == "__main__":
         print 'sending ', message
         sock.sendall(message)
 
-        data = sock.recv(1024)
-        reply = message_handler(data)
-        reply = json.dumps(reply)
-        sock.sendall(reply)
+        while True:
+            data = sock.recv(1024)
+            reply = message_handler(data)
+            reply = json.dumps(reply)
+            sock.sendall(reply)
 
     finally:
         pass
