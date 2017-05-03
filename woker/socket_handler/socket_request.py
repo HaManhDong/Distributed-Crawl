@@ -58,7 +58,7 @@ def message_handler(message):
             #     next_urls = next_urls + spider.get_next_urls()
 
             for spiderKey in reply['urls']:
-                reply['urls'][key] = get_spider(key).get_next_urls()
+                reply['urls'][spiderKey] = get_spider(spiderKey).get_next_urls()
             print len(next_urls)
             print reply
     return reply
