@@ -41,7 +41,7 @@ def message_handler(message):
             spider_list = []
             for key in message['urls']:
                 reply['urls'][key] = []
-                print "key: %s , value: %s" % (key, message['urls'][key])
+                # print "key: %s , value: %s" % (key, message['urls'][key])
                 spider = get_spider(key)
                 if spider != None:
                     # action_crawl(spider, message['urls'][key])
@@ -83,12 +83,14 @@ if __name__ == "__main__":
         sock.sendall(message)
 
         while True:
-            data = sock.recv(1024)
+            data = sock.recv(8096)
+            print data
             reply = message_handler(data)
             reply = json.dumps(reply)
             sock.sendall(reply)
 
     finally:
+        print "connection was close"
         pass
         # print 'closing socket'
         # sock.close()
