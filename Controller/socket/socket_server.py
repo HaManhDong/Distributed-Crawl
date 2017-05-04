@@ -3,7 +3,7 @@ from Controller.database.database import Database_Service, Site_Crawl
 import socket
 import time
 
-SERVER_ADDRESS = ('localhost', 10005)
+SERVER_ADDRESS = ('localhost', 10000)
 
 
 class Server:
@@ -22,7 +22,7 @@ class Server:
         while True:
             print 'waiting for a connection....'
             worker_list_exist = database_service.get_list_worker_exist()
-            if len(worker_list_exist) == 3:
+            if len(worker_list_exist) == 1:
                 self.start_crawl(self.base_list, worker_list_exist)
             connection, client_address = self.server_socket.accept()
             name = 'client_' + str(self.counter)
@@ -37,7 +37,7 @@ class Server:
         for base_url in base_url_list:
             site_crawl = Site_Crawl(base_url=base_url)
             database_service.add_site_crawl(site_crawl=site_crawl)
-            database_service.add_next_url(site_crawl=site_crawl, url_list=[base_url, ])
+            database_service.add_next_url(site_crawl=base_url, url_list=[base_url, ])
         # calculate unit length for each worker that exist
         worker_list_length = len(self.threads)
         length_unit = len(base_url_list) / worker_list_length
@@ -59,6 +59,6 @@ class Server:
 
 
 if __name__ == '__main__':
-    url = ['a.com', 'b.com', 'c.com', 'd.com']
+    url = ['http://abcnews.go.com', 'http://www.nydailynews.com', 'http://chicago.suntimes.com']
     server = Server(SERVER_ADDRESS, base_list=url)
     server.run()

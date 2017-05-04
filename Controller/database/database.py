@@ -61,8 +61,9 @@ class Database_Service:
         self.session.add(worker)
         self.session.commit()
 
-    def block_change(self, worker):
-        if worker.status is 'enable':
+    def block_change(self, thread_name):
+        worker = self.session.query(Worker_Node).filter_by(thread_name=thread_name).first()
+        if worker.status == 'enable':
             worker.status = 'disable'
         else:
             worker.status = 'enable'
@@ -74,30 +75,39 @@ class Database_Service:
         site_crawl.waiting_url.append(waiting_url_obj)
         self.session.commit()
 
-    def add_next_url(self, url, url_list):
-        site_crawl = self.get_site_crawl_with_base_url(url)
-        crawled_url_list = self.session.query(Crawled_Url_List).filter_by(base_url=site_crawl).all()
-        waiting_url_list = self.session.query(Waiting_Url_List).filter_by(base_url=site_crawl).all()
-        current_next_url_list = self.session.query(Next_Url_List).filter_by(base_url=site_crawl).all()
-
+    def remove_duplica(self, url_list):
+        result = []
         for url in url_list:
+            if url not in result:
+                result.append(url)
+        return result
+
+    def add_next_url(self, site_crawl, url_list):
+        site_crawl_obj = self.get_site_crawl_with_base_url(site_crawl)
+        crawled_url_list = self.session.query(Crawled_Url_List).filter_by(base_url=site_crawl_obj).all()
+        waiting_url_list = self.session.query(Waiting_Url_List).filter_by(base_url=site_crawl_obj).all()
+        current_next_url_list = self.session.query(Next_Url_List).filter_by(base_url=site_crawl_obj).all()
+        a = []
+        url_list_after = self.remove_duplica(url_list)
+        for url in url_list_after:
             check_exist = False
             for crawled_url in crawled_url_list:
-                if url == crawled_url:
+                if url == crawled_url.url:
                     check_exist = True
                     break
             for next_url in current_next_url_list:
-                if url == next_url:
+                if url == next_url.url:
                     check_exist = True
                     break
 
             for wait_url in waiting_url_list:
-                if url == wait_url:
+                if url == wait_url.url:
                     check_exist = True
                     break
-            if check_exist is False:
+            if check_exist == False:
                 next_url = Next_Url_List(url=url)
-                site_crawl.next_url.append(next_url)
+                site_crawl_obj.next_url.append(next_url)
+                a.append(url)
         self.session.commit()
 
     def add_crawled_url(self, site_crawl, url):
