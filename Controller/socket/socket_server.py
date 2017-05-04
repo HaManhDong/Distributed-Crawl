@@ -1,5 +1,5 @@
-from Server_side.socket.threading_client import Thread_Socket_Client
-from Server_side.database.database import Database_Service, Site_Crawl
+from Controller.socket.threading_client import Thread_Socket_Client
+from Controller.database.database import Database_Service, Site_Crawl
 import socket
 import time
 

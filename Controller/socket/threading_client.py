@@ -1,8 +1,7 @@
-from Server_side.database.database import Worker_Node, Database_Service, Waiting_Url_List
+from Controller.database.database import Worker_Node, Database_Service, Waiting_Url_List
 import threading
 import socket
 import json
-
 
 class Thread_Socket_Client(threading.Thread):
     def __init__(self, connection, client_address,
