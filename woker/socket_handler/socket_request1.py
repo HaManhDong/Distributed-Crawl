@@ -84,9 +84,10 @@ if __name__ == "__main__":
 
         while True:
             data = sock.recv(8096)
-            print data
+            print "receive" ,data
             reply = message_handler(data)
             reply = json.dumps(reply)
+            print "sending...", reply
             sock.sendall(reply)
 
     finally:
