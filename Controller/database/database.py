@@ -26,6 +26,9 @@ class Next_Url_List(Base):
     base_url_id = Column(Integer, ForeignKey('site_crawl.id'))
     base_url = relationship('Site_Crawl', back_populates="next_url")
 
+    def __repr__(self):
+        return self.url
+
 
 class Crawled_Url_List(Base):
     __tablename__ = 'crawled_url_list'
@@ -33,6 +36,11 @@ class Crawled_Url_List(Base):
     url = Column(String)
     base_url_id = Column(Integer, ForeignKey('site_crawl.id'))
     base_url = relationship('Site_Crawl', back_populates="crawled_url")
+    worker_id = Column(Integer, ForeignKey('worker_node.id'))
+    worker = relationship('Worker_Node', back_populates='crawled_url_list')
+
+    def __repr__(self):
+        return self.url
 
 
 class Waiting_Url_List(Base):
@@ -42,6 +50,11 @@ class Waiting_Url_List(Base):
     group_id = Column(Integer)
     base_url_id = Column(Integer, ForeignKey('site_crawl.id'))
     base_url = relationship('Site_Crawl', back_populates="waiting_url")
+    worker_id = Column(Integer, ForeignKey('worker_node.id'))
+    worker = relationship('Worker_Node', back_populates='waiting_url_list')
+
+    def __repr__(self):
+        return self.url
 
 
 class Worker_Node(Base):
@@ -51,6 +64,9 @@ class Worker_Node(Base):
     port = Column(String)
     status = Column(String)
     thread_name = Column(String)
+    type = Column(String)
+    crawled_url_list = relationship('Crawled_Url_List', cascade="all, delete-orphan")
+    waiting_url_list = relationship('Waiting_Url_List', cascade="all, delete-orphan")
 
 
 class Database_Service:
@@ -69,10 +85,13 @@ class Database_Service:
             worker.status = 'enable'
         self.session.commit()
 
-    def add_waiting_url(self, site_crawl, waiting_url_obj):
-        next_url_obj = self.get_next_url_by_url(waiting_url_obj.url)
-        self.session.delete(next_url_obj)
+    def add_waiting_url(self, site_crawl, worker_node, url, group_id):
+        next_url_obj = self.get_next_url_by_url(url)
+        if next_url_obj is not None:
+            self.session.delete(next_url_obj)
+        waiting_url_obj = Waiting_Url_List(url=url, group_id=group_id)
         site_crawl.waiting_url.append(waiting_url_obj)
+        worker_node.waiting_url_list.append(waiting_url_obj)
         self.session.commit()
 
     def remove_duplica(self, url_list):
@@ -110,11 +129,13 @@ class Database_Service:
                 a.append(url)
         self.session.commit()
 
-    def add_crawled_url(self, site_crawl, url):
+    def add_crawled_url(self, site_crawl, url, worker_node):
         wait_url = self.session.query(Waiting_Url_List).filter_by(url=url).first()
-        self.session.delete(wait_url)
+        if wait_url is not None:
+            self.session.delete(wait_url)
         crawled_url = Crawled_Url_List(url=url)
         site_crawl.crawled_url.append(crawled_url)
+        worker_node.crawled_url_list.append(crawled_url)
         self.session.commit()
 
     def get_worker_to_crawl_base_url(self):
@@ -126,7 +147,7 @@ class Database_Service:
         self.session.commit()
 
     def get_list_worker_exist(self):
-        worker_list = self.session.query(Worker_Node).filter_by(status='enable').all()
+        worker_list = self.session.query(Worker_Node).filter_by(type='worker').filter_by(status='enable').all()
         return worker_list
 
     def get_site_crawl_with_base_url(self, base_url):
@@ -152,6 +173,37 @@ class Database_Service:
             return 0
         else:
             return url_obj
+
+    def get_worker_by_ip(self, ip, port):
+        worker_node = self.session.query(Worker_Node).filter_by(ip=ip, port=port).first()
+        return worker_node
+
+    def get_first_backup_node(self):
+        backup_node = self.session.query(Worker_Node).filter_by(type='backup').first()
+        return backup_node
+
+    def change_backup_to_worker(self, backup_node):
+        backup_node.type = 'worker'
+        backup_node.status = 'disable'
+        self.session.commit()
+        return True
+
+    def change_worker_to_overload(self, worker_node):
+        worker_node.status = 'overload'
+        self.session.commit()
+        return True
+
+    def delete_crawled_url(self, crawled_url):
+        if crawled_url is not None:
+            self.session.delete(crawled_url)
+        self.session.commit()
+        return True
+
+    def delete_waiting_url(self, waiting_url):
+        if waiting_url is not None:
+            self.session.delete(waiting_url)
+        self.session.commit()
+        return True
 
 
 Base.metadata.create_all(engine)

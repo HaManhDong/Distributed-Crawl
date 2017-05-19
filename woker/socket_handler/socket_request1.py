@@ -74,7 +74,8 @@ def get_process_crawl():
 if __name__ == "__main__":
     sock = connect_server('localhost', 10000)
     message = {
-        'type': 'join'
+        'type': 'join',
+        'data': 'worker'
     }
     try:
         # Send data
