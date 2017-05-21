@@ -5,6 +5,16 @@ from woker.us.daily_news.spider import DailyNewsSpider
 from woker.us.chicago_suntimes.spider import ChicagoSuntimesSpider
 import socket
 import json
+from subprocess import call
+import threading, time
+
+
+class myThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        call(['scrapy crawl abcnews'])
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,14 +62,29 @@ def message_handler(message):
                         db_name = db_name.split('.')[1]
                     spider.setup(message['urls'][key], db_name)
                     spider_list.append(spider)
-                    process.crawl(spider)
-            process.start() # the script will block here until the crawling is finished
+                    spider.run()
+                    # thread1 = myThread()
+                    # thread1.start()
+                    # call(['ls', '-la'])
+
+                    # time.sleep(4)
+
+                    # process.crawl(spider)
+            # process.start() # the script will block here until the crawling is finished
             # for spider in spider_list:
             #     next_urls = next_urls + spider.get_next_urls()
 
+            # for spiderKey in reply['urls']:
+            #     reply['urls'][spiderKey] = get_spider(spiderKey).get_next_urls()
+            # print len(next_urls)
+
             for spiderKey in reply['urls']:
-                reply['urls'][spiderKey] = get_spider(spiderKey).get_next_urls()
-            print len(next_urls)
+                with open('abc.txt') as fp:
+                    for line in fp:
+                        if line:
+                            reply['urls'][spiderKey].append(line)
+                            # print line
+
             print reply
     return reply
 
@@ -96,4 +121,5 @@ if __name__ == "__main__":
         pass
         # print 'closing socket'
         # sock.close()
+
 
