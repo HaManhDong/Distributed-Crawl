@@ -78,6 +78,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    url = ['http://abcnews.go.com', 'http://www.nydailynews.com', 'http://chicago.suntimes.com']
+    # url = ['http://abcnews.go.com', 'http://www.nydailynews.com', 'http://chicago.suntimes.com']
+    url = ['http://abcnews.go.com']
     server = Server(SERVER_ADDRESS, base_list=url)
     server.run()

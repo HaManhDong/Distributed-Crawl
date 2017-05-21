@@ -2,10 +2,11 @@ import datetime
 from woker.database.database_connection import NewsData
 import scrapy
 from woker.database import database_connection
+from scrapy import cmdline
 
 
 class ABCNewsSpider(scrapy.Spider):
-    name = "ABC News"
+    name = "abcnews"
     db_session = ''
     start_urls = []
     next_urls = []
@@ -29,6 +30,13 @@ class ABCNewsSpider(scrapy.Spider):
             ABCNewsSpider.db_session.commit()
 
         ABCNewsSpider.next_urls += self.get_next_link_list(response)
+
+        # write to file abc.txt
+        target = open('abc.txt', 'w')
+        for url in ABCNewsSpider.next_urls:
+            target.write(url)
+            target.write('\n')
+        target.close()
 
     @staticmethod
     def get_next_link_list(response):
@@ -99,3 +107,7 @@ class ABCNewsSpider(scrapy.Spider):
     @staticmethod
     def get_next_urls():
         return ABCNewsSpider.next_urls
+
+    @staticmethod
+    def run():
+        cmdline.execute("scrapy crawl abcnews".split())
