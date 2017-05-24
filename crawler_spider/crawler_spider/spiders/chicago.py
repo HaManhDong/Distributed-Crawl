@@ -2,12 +2,12 @@ import datetime
 from woker.database.database_connection import NewsData
 import scrapy
 from woker.database import database_connection
-from scrapy import cmdline
 
 
-class ABCNewsSpider(scrapy.Spider):
-    name = "abcnews"
+class ChicagoSuntimesSpider(scrapy.Spider):
+    name = "chicago"
     db_session = database_connection.create_database_and_connect(name)
+    start_urls = []
     next_urls = []
 
     def start_requests(self):
@@ -25,47 +25,38 @@ class ABCNewsSpider(scrapy.Spider):
         if news_title is not None and content is not None and news_time is not None and news_type is not None:
             news_page_data = NewsData(url=url, title=news_title, content=content,
                                       time=news_time, type=news_type)
-            ABCNewsSpider.db_session.add(news_page_data)
-            ABCNewsSpider.db_session.commit()
+            ChicagoSuntimesSpider.db_session.add(news_page_data)
+            ChicagoSuntimesSpider.db_session.commit()
 
-        ABCNewsSpider.next_urls += self.get_next_link_list(response)
+        ChicagoSuntimesSpider.next_urls += self.get_next_link_list(response)
 
-        # write to file abc.txt
+        # write to file
         target = open(self.name, 'w')
-        for url in ABCNewsSpider.next_urls:
+        for url in ChicagoSuntimesSpider.next_urls:
             target.write(url)
             target.write('\n')
         target.close()
 
     @staticmethod
     def get_next_link_list(response):
-        accept_link = ['/Politics', '/Entertainment', '/Health', '/Technology', '/Business', '/Sports',
-                       '/Entertainment', 'http://abcnews.go.com']
         nex_link_list = []
-        href_element = []
-        for link in accept_link:
-            href_list = response.xpath("//a[contains(@href,'" + link + "')]")
-            for href_link in href_list:
-                href_element.append(href_link)
+        href_element = response.xpath("//a[contains(@href,'http://chicago.suntimes.com')]")
         for link in href_element:
             link_url = link.xpath("./@href").extract_first()
-            if 'http://abcnews.go.com' not in link_url:
-                link_url = 'http://abcnews.go.com' + link_url
             nex_link_list.append(link_url)
-        # ABCNewsSpider.next_urls += nex_link_list
         return nex_link_list
 
     @staticmethod
     def get_title(response):
         news_title_element = response.xpath('/html/head//title/text()')
         if len(news_title_element) > 0:
-            return news_title_element.extract_first()
+            return news_title_element.extract_first().split("|")[0]
         return None
 
     @staticmethod
     def get_content(response):
         content_block_element = response.xpath(
-            '//div[@class="article-copy"]')
+            '//div[@itemprop="articleBody"]')
         if len(content_block_element) > 0:
             return_text = ''
             paragraph_nodes = content_block_element[0].xpath(".//p")
@@ -78,12 +69,17 @@ class ABCNewsSpider(scrapy.Spider):
 
     @staticmethod
     def get_time(response):
-        datetime_element = response.xpath('/html/head//meta[@name="Last-Modified"]/@content')
+        datetime_element = response.xpath(
+            '//span[@class="post-relative-date top-date"]/text()')
         if len(datetime_element) > 0:
             try:
-                date_time = datetime_element.extract_first().split(" ")
-                datetime_data = date_time[0] + "T" + date_time[1]
+
+                datetime_data = datetime_element.extract_first()[0:17]
+                date_data = datetime_data.split(",")[0].split('/')
+                time_data = datetime_data.split(",")[1][1:7].split(':')
                 try:
+                    datetime_data = date_data[2] + '-' + date_data[0] + '-' + datetime_data[1] + \
+                                    'T' + time_data[0] + ':' + time_data[1] + ':00'
                     checkDate = datetime.datetime.strptime(datetime_data, "%Y-%m-%dT%H:%M:%S")
                     return datetime_data
                 except ValueError:
@@ -94,7 +90,7 @@ class ABCNewsSpider(scrapy.Spider):
 
     @staticmethod
     def get_type(response):
-        type_element = response.xpath('//article[@class="article"]/@data-section')
+        type_element = response.xpath('//a[contains(@id,"newsfeed-logo")]/text()')
         if len(type_element) > 0:
             try:
                 type_data = type_element.extract_first().split(',')[0]
@@ -105,8 +101,5 @@ class ABCNewsSpider(scrapy.Spider):
 
     @staticmethod
     def get_next_urls():
-        return ABCNewsSpider.next_urls
+        return ChicagoSuntimesSpider.next_urls
 
-    @staticmethod
-    def run():
-        cmdline.execute("scrapy crawl abcnews".split())
