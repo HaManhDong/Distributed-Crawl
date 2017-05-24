@@ -38,6 +38,9 @@ class Thread_Socket_Client(threading.Thread):
                 print data
                 if data:
                     self.handle(data)
+                else:
+                    self.interupt_handle()
+                    self.cleanup()
         except socket.error:
             self.interupt_handle()
             self.cleanup()
@@ -259,5 +262,5 @@ class Thread_Socket_Client(threading.Thread):
 
     def cleanup(self):
         self.connection.close()
-        threading.currentThread().stop()
-        threading.currentThread().join()
+        # threading.currentThread().stop()
+        # threading.currentThread().join()
