@@ -7,17 +7,13 @@ from scrapy import cmdline
 
 class ABCNewsSpider(scrapy.Spider):
     name = "abcnews"
+    db_session = database_connection.create_database_and_connect('abc')
     next_urls = []
 
     def start_requests(self):
         start = getattr(self, 'url', None)
         print start
         yield scrapy.Request(start, self.parse)
-
-    @staticmethod
-    def setup(start_urls, db_name):
-        ABCNewsSpider.db_session = database_connection.create_database_and_connect(db_name)
-        ABCNewsSpider.start_urls = start_urls
 
     def parse(self, response):
         news_title = self.get_title(response)
