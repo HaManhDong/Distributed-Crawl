@@ -127,14 +127,14 @@ class Thread_Socket_Client(threading.Thread):
             next_url_list = self.database_service.get_next_url_list()
             length_next_url_list = len(next_url_list)
             len_before_add = length_next_url_list
+            for base_url in url_dict.keys():
+                self.database_service.add_next_url(base_url, url_dict[base_url])
             if (length_next_url_list >= 10) and (length_next_url_list <= 50):
                 data = self.convert_to_json(next_url_list)
                 self.send_data(data)
             elif length_next_url_list > 50:
                 self.handle_url_request(next_url_list)
 
-            for base_url in url_dict.keys():
-                self.database_service.add_next_url(base_url, url_dict[base_url])
             wait_url_list = self.database_service.get_wait_url_list_with_group_id(group_id)
             for wait_url in wait_url_list:
                 self.database_service.add_crawled_url(wait_url.base_url,
@@ -144,7 +144,7 @@ class Thread_Socket_Client(threading.Thread):
                 next_list_obj = self.database_service.get_next_url_list()
                 next_list = []
                 for next_url_obj in next_list_obj:
-                    next_list.append(next_url_obj.url)
+                    next_list.append(next_url_obj)
                 if (len(next_list) >= 10) and (len(next_list) <= 50):
                     data = self.convert_to_json(next_list)
                     self.send_data(data)
@@ -243,15 +243,14 @@ class Thread_Socket_Client(threading.Thread):
         base_urls = []
         urls = {}
         group_id = self.database_service.get_groud_id()
-        for url in url_list:
-            url_obj = self.database_service.get_next_url_by_url(url)
+        for url_obj in url_list:
             site_crawl = url_obj.base_url
-            self.database_service.add_waiting_url(site_crawl, self.worker, url, group_id + 1)
+            self.database_service.add_waiting_url(site_crawl, self.worker, url_obj.url, group_id + 1)
             base_url = site_crawl.base_url
             if base_url not in base_urls:
                 base_urls.append(base_url)
                 urls[base_url] = []
-            urls[base_url].append(url)
+            urls[base_url].append(url_obj.url)
 
         data = {
             'type': 'crawl',
