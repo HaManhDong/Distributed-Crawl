@@ -26,9 +26,6 @@ class Next_Url_List(Base):
     base_url_id = Column(Integer, ForeignKey('site_crawl.id'))
     base_url = relationship('Site_Crawl', back_populates="next_url")
 
-    def __repr__(self):
-        return self.url
-
 
 class Crawled_Url_List(Base):
     __tablename__ = 'crawled_url_list'
@@ -38,9 +35,6 @@ class Crawled_Url_List(Base):
     base_url = relationship('Site_Crawl', back_populates="crawled_url")
     worker_id = Column(Integer, ForeignKey('worker_node.id'))
     worker = relationship('Worker_Node', back_populates='crawled_url_list')
-
-    def __repr__(self):
-        return self.url
 
 
 class Waiting_Url_List(Base):
@@ -52,9 +46,6 @@ class Waiting_Url_List(Base):
     base_url = relationship('Site_Crawl', back_populates="waiting_url")
     worker_id = Column(Integer, ForeignKey('worker_node.id'))
     worker = relationship('Worker_Node', back_populates='waiting_url_list')
-
-    def __repr__(self):
-        return self.url
 
 
 class Worker_Node(Base):

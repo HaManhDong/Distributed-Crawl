@@ -5,9 +5,26 @@ from woker.us.daily_news.spider import DailyNewsSpider
 from woker.us.chicago_suntimes.spider import ChicagoSuntimesSpider
 import socket
 import json
+from subprocess import call
+import threading, time, os
+
+
+def foo(spider_name, url):
+    # time.sleep(4)
+    command = 'scrapy crawl ' + spider_name + ' -a url="' + url + '"'
+    # command = 'scrapy crawl abcnews -a url="http://abcnews.go.com/Politics/trump-asked-nsa-director-publicly-push-back-fbis/story?id=47578374&cid=clicksource_77_null_headlines_hed"'
+    os.system(command)
+    for t in threading.enumerate():
+        if t.getName() == 'MainThread':
+            count_url = t.__getattribute__('count_url')
+            count_url -= 1
+            t.__setattr__('count_url', count_url)
+            break
+
 
 # Create a TCP/IP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 def connect_server(ip, port):
     # Create a TCP/IP socket
@@ -19,10 +36,10 @@ def connect_server(ip, port):
 
 def get_spider(base_url):
     return {
-        'http://abcnews.go.com': ABCNewsSpider,
+        'http://abcnews.go.com': 'abcnews',
         'http://edition.cnn.com': CNNSpider,
         'http://www.nydailynews.com': DailyNewsSpider,
-        'http://chicago.suntimes.com': ChicagoSuntimesSpider,
+        'http://chicago.suntimes.com': 'chicago',
     }.get(base_url, None)
 
 
@@ -39,27 +56,33 @@ def message_handler(message):
         if message['urls']:
             process = get_process_crawl()
             spider_list = []
+            count_url = 0
+
+            for key in message['urls']:
+                count_url += len(message['urls'][key])
+
+            threading.currentThread().__setattr__('count_url', count_url)
+
             for key in message['urls']:
                 reply['urls'][key] = []
-                # print "key: %s , value: %s" % (key, message['urls'][key])
-                spider = get_spider(key)
-                if spider != None:
-                    # action_crawl(spider, message['urls'][key])
-                    db_name = key.split('//')[1]
-                    if db_name.split('.')[0] != 'www':
-                        db_name = db_name.split('.')[0]
-                    else:
-                        db_name = db_name.split('.')[1]
-                    spider.setup(message['urls'][key], db_name)
-                    spider_list.append(spider)
-                    process.crawl(spider)
-            process.start() # the script will block here until the crawling is finished
-            # for spider in spider_list:
-            #     next_urls = next_urls + spider.get_next_urls()
+                spider_name = get_spider(key)
+                for url in message['urls'][key]:
+                    t = threading.Thread(target=foo, args=(spider_name, url))
+                    t.start()
 
-            for spiderKey in reply['urls']:
-                reply['urls'][spiderKey] = get_spider(spiderKey).get_next_urls()
-            print len(next_urls)
+                # time.sleep(6)
+
+            while True:
+                if threading.currentThread().__getattribute__('count_url') == 0:
+                    for spiderKey in reply['urls']:
+                        spider_name = get_spider(spiderKey)
+                        with open(spider_name) as fp:
+                            for line in fp:
+                                if line:
+                                    reply['urls'][spiderKey].append(line)
+                                    # print line
+                    break
+
             print reply
     return reply
 
@@ -71,10 +94,12 @@ def get_process_crawl():
 
     return process
 
+
 if __name__ == "__main__":
     sock = connect_server('localhost', 10000)
     message = {
-        'type': 'join'
+        'type': 'join',
+        'data': 'worker'
     }
     try:
         # Send data
@@ -84,9 +109,10 @@ if __name__ == "__main__":
 
         while True:
             data = sock.recv(8096)
-            print data
+            print "receive", data
             reply = message_handler(data)
             reply = json.dumps(reply)
+            print "sending...", reply
             sock.sendall(reply)
 
     finally:
@@ -94,4 +120,3 @@ if __name__ == "__main__":
         pass
         # print 'closing socket'
         # sock.close()
-

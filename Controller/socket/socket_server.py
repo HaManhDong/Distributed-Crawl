@@ -23,7 +23,7 @@ class Server:
         while True:
             print 'waiting for a connection....'
             worker_list_exist = database_service.get_list_worker_exist()
-            if len(worker_list_exist) == 1:
+            if len(worker_list_exist) == 2:
                 self.start_crawl(self.base_list, worker_list_exist, database_service)
             connection, client_address = self.server_socket.accept()
             name = 'client_' + str(self.counter)
