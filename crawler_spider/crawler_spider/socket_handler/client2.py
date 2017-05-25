@@ -37,9 +37,13 @@ def connect_server(ip, port):
 def get_spider(base_url):
     return {
         'http://abcnews.go.com': 'abcnews',
-        'http://edition.cnn.com': CNNSpider,
-        'http://www.nydailynews.com': DailyNewsSpider,
+        'http://edition.cnn.com': 'cnn',
+        # 'http://www.nydailynews.com': 'dailynew',
         'http://chicago.suntimes.com': 'chicago',
+        # 'http://www.huffingtonpost.com': 'hufpost',
+        'http://www.nbcnews.com': 'nbc',
+        'http://nypost.com': 'nypost',
+        'http://www.latimes.com': 'lagtime'
     }.get(base_url, None)
 
 

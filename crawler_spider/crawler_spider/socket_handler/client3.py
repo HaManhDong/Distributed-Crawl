@@ -37,9 +37,13 @@ def connect_server(ip, port):
 def get_spider(base_url):
     return {
         'http://abcnews.go.com': 'abcnews',
-        'http://edition.cnn.com': CNNSpider,
-        'http://www.nydailynews.com': DailyNewsSpider,
+        'http://edition.cnn.com': 'cnn',
+        # 'http://www.nydailynews.com': 'dailynew',
         'http://chicago.suntimes.com': 'chicago',
+        # 'http://www.huffingtonpost.com': 'hufpost',
+        'http://www.nbcnews.com': 'nbc',
+        'http://nypost.com': 'nypost',
+        'http://www.latimes.com': 'lagtime'
     }.get(base_url, None)
 
 
@@ -76,11 +80,15 @@ def message_handler(message):
                 if threading.currentThread().__getattribute__('count_url') == 0:
                     for spiderKey in reply['urls']:
                         spider_name = get_spider(spiderKey)
-                        with open(spider_name) as fp:
-                            for line in fp:
-                                if line:
-                                    reply['urls'][spiderKey].append(line)
-                                    # print line
+
+                        file = open(spider_name, 'r')
+                        reply['urls'][spiderKey] = file.read().splitlines()
+
+                        # with open(spider_name) as fp:
+                        #     for line in fp:
+                        #         if line:
+                        #             reply['urls'][spiderKey].append(line)
+                        #             # print line
                     break
 
             print reply
