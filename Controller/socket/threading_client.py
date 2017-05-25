@@ -18,22 +18,25 @@ class Thread_Socket_Client(threading.Thread):
         self.backup_node = None
 
     def run(self):
-        print '[', threading.currentThread().getName(), '].... from, ', self.client_address
+        print '[ Accept ', threading.currentThread().getName(), ']  from, ', self.client_address
+        print ''
         try:
 
             while True:
                 data = ''
                 data_unit = self.connection.recv(4096)
                 data += data_unit
-                print '[_Line 27_:RECEIVED__FROM__', self.name, '___]', data_unit
+                # print ''
+                # print '[ Receiving Data From', self.name, ' .....]', data_unit
                 if len(data_unit) >= 4096:
                     while True:
                         data_unit = self.connection.recv(4096)
-                        print 'data receive: ', data_unit
+                        # print 'data receive: ', data_unit
                         data += data_unit
                         if len(data_unit) < 4096:
                             break
-                print '[_Line 36_:RECEIVED__FROM__', self.name, '___]',data
+                print '[ Line 38:  Received Data From', self.name, '___]',data
+                print ''
                 if data:
                     self.handle(data)
                 else:
@@ -120,7 +123,8 @@ class Thread_Socket_Client(threading.Thread):
     def handle(self, raw_data):
         database_service = Database_Service()
         data = json.loads(raw_data)
-        print '[_Line 123_:RECEIVED__FROM__', self.name, '___]', data
+        # print '[ Line 126:  Received Data From', self.name, ' ]', data
+        # print ''
         if data['type'] == 'crawled':
             group_id = data['group_id']
             url_dict = data['urls']
@@ -167,8 +171,8 @@ class Thread_Socket_Client(threading.Thread):
                                           thread_name=threading.currentThread().getName(),
                                           type='backup')
             database_service.add_woker(self.worker)
-            print '[', threading.currentThread().getName(), '].... create worker obj for address ip: %s port %s' % \
-                                                            (self.client_address[0], self.client_address[1])
+            # print '[', threading.currentThread().getName(), '].... create worker obj for address ip: %s port %s' % \
+            #                                                 (self.client_address[0], self.client_address[1])
         elif data['type'] == 'overload':
             group_id = data['group_id']
             url_dict = data['urls']
@@ -194,6 +198,7 @@ class Thread_Socket_Client(threading.Thread):
                 thread.send_data(data)
             else:
                 print 'we have no backup node....'
+                print ''
 
         elif data['type'] == 'backup':
             url_dict = data['urls']
@@ -241,7 +246,8 @@ class Thread_Socket_Client(threading.Thread):
 
     def send_data(self, data):
         database_service = Database_Service()
-        print '[_Line_244_:SEND_TO__'+self.name+']' + data
+        print '[ Line 249:  Send to '+self.name+'  ]' + data
+        print ''
         self.connection.sendall(data)
         database_service.block_change(self.name)
 

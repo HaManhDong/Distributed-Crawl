@@ -78,7 +78,9 @@ def message_handler(message):
 
             while True:
                 if threading.currentThread().__getattribute__('count_url') == 0:
+                    count = 0
                     for spiderKey in reply['urls']:
+                        count += 1
                         spider_name = get_spider(spiderKey)
 
                         file = open(spider_name, 'r')
@@ -89,9 +91,10 @@ def message_handler(message):
                         #         if line:
                         #             reply['urls'][spiderKey].append(line)
                         #             # print line
+                    print "Total next link: ", count
+                    print ''
                     break
 
-            print reply
     return reply
 
 
@@ -118,9 +121,11 @@ if __name__ == "__main__":
         while True:
             data = sock.recv(8096)
             print "receive", data
+            print ''
             reply = message_handler(data)
             reply = json.dumps(reply)
             print "sending...", reply
+            print ''
             sock.sendall(reply)
 
     finally:
