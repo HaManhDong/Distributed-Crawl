@@ -37,13 +37,19 @@ def connect_server(ip, port):
 def get_spider(base_url):
     return {
         'http://abcnews.go.com': 'abcnews',
-        'http://edition.cnn.com': CNNSpider,
-        'http://www.nydailynews.com': DailyNewsSpider,
+        'http://edition.cnn.com': 'cnn',
+        # 'http://www.nydailynews.com': 'dailynew',
         'http://chicago.suntimes.com': 'chicago',
+        # 'http://www.huffingtonpost.com': 'hufpost',
+        'http://www.nbcnews.com': 'nbc',
+        'http://nypost.com': 'nypost',
+        'http://www.latimes.com': 'lagtime'
     }.get(base_url, None)
 
 
 def message_handler(message, fake_full_memmory):
+    message = json.loads(message)
+
     # fake full memmory
     fake_full_memmory += 1
     print "***********", fake_full_memmory
@@ -62,7 +68,7 @@ def message_handler(message, fake_full_memmory):
         'urls': {}
     }
     next_urls = []
-    message = json.loads(message)
+
     if message['type'] == 'crawl':
         reply['group_id'] = message['group_id']
         if message['urls']:

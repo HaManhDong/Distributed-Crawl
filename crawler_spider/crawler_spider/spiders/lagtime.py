@@ -4,8 +4,8 @@ import scrapy
 from woker.database import database_connection
 
 
-class ABCNewsSpider(scrapy.Spider):
-    name = "abcnews"
+class LosAngelesTimesSpider(scrapy.Spider):
+    name = "lagtime"
     db_session = database_connection.create_database_and_connect(name)
     next_urls = []
 
@@ -24,39 +24,22 @@ class ABCNewsSpider(scrapy.Spider):
         if news_title is not None and content is not None and news_time is not None and news_type is not None:
             news_page_data = NewsData(url=url, title=news_title, content=content,
                                       time=news_time, type=news_type)
-            ABCNewsSpider.db_session.add(news_page_data)
-            ABCNewsSpider.db_session.commit()
+            LosAngelesTimesSpider.db_session.add(news_page_data)
+            LosAngelesTimesSpider.db_session.commit()
 
-        ABCNewsSpider.next_urls += self.get_next_link_list(response)
+        LosAngelesTimesSpider.next_urls += self.get_next_link_list(response)
 
         # write to file
         target = open(self.name, 'w')
-        for url in ABCNewsSpider.next_urls:
+        for url in LosAngelesTimesSpider.next_urls:
             target.write(url)
             target.write('\n')
         target.close()
 
-    @staticmethod
-    def get_next_link_list(response):
-        accept_link = ['/Politics', '/Entertainment', '/Health', '/Technology', '/Business', '/Sports',
-                       '/Entertainment', 'http://abcnews.go.com']
-        nex_link_list = []
-        href_element = []
-        for link in accept_link:
-            href_list = response.xpath("//a[contains(@href,'" + link + "')]")
-            for href_link in href_list:
-                href_element.append(href_link)
-        for link in href_element:
-            link_url = link.xpath("./@href").extract_first()
-            if 'http://abcnews.go.com' not in link_url:
-                link_url = 'http://abcnews.go.com' + link_url
-            nex_link_list.append(link_url)
-        # ABCNewsSpider.next_urls += nex_link_list
-        return nex_link_list
 
     @staticmethod
     def get_title(response):
-        news_title_element = response.xpath('/html/head//title/text()')
+        news_title_element = response.xpath('//h1[@itemprop="headline"]/text()')
         if len(news_title_element) > 0:
             return news_title_element.extract_first()
         return None
@@ -64,7 +47,9 @@ class ABCNewsSpider(scrapy.Spider):
     @staticmethod
     def get_content(response):
         content_block_element = response.xpath(
-            '//div[@class="article-copy"]')
+            '//div[contains(@itemprop,"articleBody")]')
+        # if len(content_block_element) <= 0:
+        #     content_block_element = response.xpath('//*[contains(@class,"block_content_slide_showdetail")]')
         if len(content_block_element) > 0:
             return_text = ''
             paragraph_nodes = content_block_element[0].xpath(".//p")
@@ -77,11 +62,12 @@ class ABCNewsSpider(scrapy.Spider):
 
     @staticmethod
     def get_time(response):
-        datetime_element = response.xpath('/html/head//meta[@name="Last-Modified"]/@content')
+        # content_block_element =
+        # response.xpath("//div[contains(@class, 'block_timer_share') and contains(@class, 'class2')]")
+        datetime_element = response.xpath('/html/head//meta[@itemprop="datePublished"]/@content')
         if len(datetime_element) > 0:
             try:
-                date_time = datetime_element.extract_first().split(" ")
-                datetime_data = date_time[0] + "T" + date_time[1]
+                datetime_data = datetime_element.extract_first()[0:19]
                 try:
                     checkDate = datetime.datetime.strptime(datetime_data, "%Y-%m-%dT%H:%M:%S")
                     return datetime_data
@@ -93,11 +79,20 @@ class ABCNewsSpider(scrapy.Spider):
 
     @staticmethod
     def get_type(response):
-        type_element = response.xpath('//article[@class="article"]/@data-section')
+        type_element = response.xpath('//a[@itemprop="articleSection"]/text()')
         if len(type_element) > 0:
             try:
-                type_data = type_element.extract_first().split(',')[0]
-                return type_data
+                datetime_data = type_element.extract_first().split(' ')[0]
+                return datetime_data
             except Exception:
                 return None
         return None
+
+    @staticmethod
+    def get_next_link_list(response):
+        nex_link_list = []
+        href_element = response.xpath("//a[starts-with(@href, '/') and not(contains(@href,'//'))]")
+        for link in href_element:
+            link_url = 'http://www.latimes.com' + link.xpath("./@href").extract_first()
+            nex_link_list.append(link_url)
+        return nex_link_list
