@@ -25,7 +25,7 @@ class Thread_Socket_Client(threading.Thread):
                 data = ''
                 data_unit = self.connection.recv(4096)
                 data += data_unit
-                print 'line 27 data receive: ', data_unit
+                print '[_Line 27_:RECEIVED__FROM__', self.name, '___]', data_unit
                 if len(data_unit) >= 4096:
                     while True:
                         data_unit = self.connection.recv(4096)
@@ -33,8 +33,7 @@ class Thread_Socket_Client(threading.Thread):
                         data += data_unit
                         if len(data_unit) < 4096:
                             break
-                print "line 32:"
-                print data
+                print '[_Line 36_:RECEIVED__FROM__', self.name, '___]',data
                 if data:
                     self.handle(data)
                 else:
@@ -49,6 +48,7 @@ class Thread_Socket_Client(threading.Thread):
     def interupt_handle(self):
         database_service = Database_Service()
         worker = database_service.get_worker_by_ip(self.client_address[0], self.client_address[1])
+        database_service.block_change(self.name)
         backup_node = database_service.get_first_backup_node()
         if backup_node is not None:
             database_service.change_backup_to_worker(backup_node)
@@ -120,7 +120,7 @@ class Thread_Socket_Client(threading.Thread):
     def handle(self, raw_data):
         database_service = Database_Service()
         data = json.loads(raw_data)
-        print 'line 43: ', data
+        print '[_Line 123_:RECEIVED__FROM__', self.name, '___]', data
         if data['type'] == 'crawled':
             group_id = data['group_id']
             url_dict = data['urls']
@@ -132,7 +132,7 @@ class Thread_Socket_Client(threading.Thread):
             for base_url in url_dict.keys():
                 database_service.add_next_url(base_url, url_dict[base_url])
             if (length_next_url_list >= 10) and (length_next_url_list <= 50):
-                data = self.convert_to_json(next_url_list)
+                data = self.convert_to_json(next_url_list,self.name)
                 self.send_data(data)
             elif length_next_url_list > 50:
                 self.handle_url_request(next_url_list)
@@ -140,15 +140,15 @@ class Thread_Socket_Client(threading.Thread):
             wait_url_list = database_service.get_wait_url_list_with_group_id(group_id)
             for wait_url in wait_url_list:
                 database_service.add_crawled_url(wait_url.base_url,
-                                                      wait_url.url,
-                                                      worker_node=self.worker)
+                                                 wait_url.url,
+                                                 worker_node=self.worker)
             if len_before_add < 10:
                 next_list_obj = database_service.get_next_url_list()
                 next_list = []
                 for next_url_obj in next_list_obj:
                     next_list.append(next_url_obj)
                 if (len(next_list) >= 10) and (len(next_list) <= 50):
-                    data = self.convert_to_json(next_list)
+                    data = self.convert_to_json(next_list,self.name)
                     self.send_data(data)
                 elif len(next_list) > 50:
                     self.handle_url_request(next_list)
@@ -227,7 +227,7 @@ class Thread_Socket_Client(threading.Thread):
                 if t.getName() == worker.thread_name:
                     thread = t
                     break
-            data = thread.convert_to_json(list_to_send)
+            data = self.convert_to_json(list_to_send,worker.thread_name)
             thread.send_data(data)
             count = count + length_unit + 1
 
@@ -243,19 +243,20 @@ class Thread_Socket_Client(threading.Thread):
         }
         self.send_data(json.dumps(data))
 
-    def convert_to_json(self, url_list):
-        database_service= Database_Service()
+    def convert_to_json(self, url_list, thread_name):
+        database_service = Database_Service()
         base_urls = []
         urls = {}
         group_id = database_service.get_groud_id()
         for url_obj in url_list:
-            site_crawl = url_obj.base_url
-            database_service.add_waiting_url(site_crawl, self.worker, url_obj.url, group_id + 1)
-            base_url = site_crawl.base_url
-            if base_url not in base_urls:
-                base_urls.append(base_url)
-                urls[base_url] = []
-            urls[base_url].append(url_obj.url)
+            if url_obj is not None:
+                site_crawl = url_obj.base_url
+                database_service.add_waiting_url(site_crawl, thread_name, url_obj.url, group_id + 1)
+                base_url = site_crawl.base_url
+                if base_url not in base_urls:
+                    base_urls.append(base_url)
+                    urls[base_url] = []
+                urls[base_url].append(url_obj.url)
 
         data = {
             'type': 'crawl',

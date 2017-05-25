@@ -23,7 +23,7 @@ class Server:
         while True:
             print 'waiting for a connection....'
             worker_list_exist = database_service.get_list_worker_exist()
-            if len(worker_list_exist) == 1:
+            if len(worker_list_exist) == 2:
                 self.start_crawl(self.base_list, worker_list_exist, database_service)
             connection, client_address = self.server_socket.accept()
             name = 'client_' + str(self.counter)
@@ -60,7 +60,7 @@ class Server:
             for url in list_to_send:
                 url_obj = database_service.get_next_url_by_url(url)
                 site_crawl = url_obj.base_url
-                database_service.add_waiting_url(site_crawl, worker, url, group_id + 1)
+                database_service.add_waiting_url(site_crawl, worker.thread_name, url, group_id + 1)
                 base_url = site_crawl.base_url
                 if base_url not in base_urls:
                     base_urls.append(base_url)

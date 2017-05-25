@@ -77,12 +77,13 @@ class Database_Service:
             worker.status = 'enable'
         self.session.commit()
 
-    def add_waiting_url(self, site_crawl, worker_node, url, group_id):
+    def add_waiting_url(self, site_crawl, thread_name, url, group_id):
         next_url_obj = self.get_next_url_by_url(url)
         if next_url_obj is not None:
             self.session.delete(next_url_obj)
         waiting_url_obj = Waiting_Url_List(url=url, group_id=group_id)
         site_crawl.waiting_url.append(waiting_url_obj)
+        worker_node = self.session.query(Worker_Node).filter_by(thread_name=thread_name).first()
         worker_node.waiting_url_list.append(waiting_url_obj)
         self.session.commit()
 
