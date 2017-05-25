@@ -190,7 +190,7 @@ class Thread_Socket_Client(threading.Thread):
                     if t.getName()== backup_node.thread_name:
                         thread = t
                         break
-                data = thread.convert_to_json(next_url_list)
+                data = self.convert_to_json(next_url_list,backup_node.thread_name)
                 thread.send_data(data)
             else:
                 print 'we have no backup node....'
