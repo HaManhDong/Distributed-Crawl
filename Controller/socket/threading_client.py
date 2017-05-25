@@ -241,7 +241,7 @@ class Thread_Socket_Client(threading.Thread):
 
     def send_data(self, data):
         database_service = Database_Service()
-        print 'data send: ' + data
+        print '[_Line_244_:SEND_TO__'+self.name+']' + data
         self.connection.sendall(data)
         database_service.block_change(self.name)
 
