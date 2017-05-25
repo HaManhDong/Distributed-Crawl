@@ -43,7 +43,19 @@ def get_spider(base_url):
     }.get(base_url, None)
 
 
-def message_handler(message):
+def message_handler(message, fake_full_memmory):
+    # fake full memmory
+    fake_full_memmory += 1
+    print "***********", fake_full_memmory
+    if fake_full_memmory == 3:
+        reply = {
+            'type': 'overload',
+            'group_id': message['group_id'],
+            'urls': message['urls']
+        }
+        return fake_full_memmory, reply
+
+
     reply = {
         'type': 'crawled',
         'group_id': 0,
@@ -76,19 +88,15 @@ def message_handler(message):
                 if threading.currentThread().__getattribute__('count_url') == 0:
                     for spiderKey in reply['urls']:
                         spider_name = get_spider(spiderKey)
-
-                        file = open(spider_name, 'r')
-                        reply['urls'][spiderKey] = file.read().splitlines()
-
-                        # with open(spider_name) as fp:
-                        #     for line in fp:
-                        #         if line:
-                        #             reply['urls'][spiderKey].append(line)
-                        #             # print line
+                        with open(spider_name) as fp:
+                            for line in fp:
+                                if line:
+                                    reply['urls'][spiderKey].append(line)
+                                    # print line
                     break
 
             print reply
-    return reply
+    return fake_full_memmory, reply
 
 
 def get_process_crawl():
@@ -100,6 +108,7 @@ def get_process_crawl():
 
 
 if __name__ == "__main__":
+    fake_full_memmory = 0
     sock = connect_server('localhost', 10000)
     message = {
         'type': 'join',
@@ -114,7 +123,9 @@ if __name__ == "__main__":
         while True:
             data = sock.recv(8096)
             print "receive", data
-            reply = message_handler(data)
+            result = message_handler(data, fake_full_memmory)
+            fake_full_memmory = result[0]
+            reply = result[1]
             reply = json.dumps(reply)
             print "sending...", reply
             sock.sendall(reply)
