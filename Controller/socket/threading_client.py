@@ -181,9 +181,17 @@ class Thread_Socket_Client(threading.Thread):
             database_service.change_worker_to_overload(self.worker)
             #     nothing to do with this worker,but we still keep this connect to worker for retriev crawled data
             backup_node = database_service.get_first_backup_node()
-            if backup_node is True:
+            if backup_node is not None:
                 database_service.change_backup_to_worker(backup_node)
                 database_service.block_change(backup_node.thread_name)
+                next_url_list = database_service.get_next_url_list()[:5]
+                thread = None
+                for t in threading.enumerate():
+                    if t.getName()== backup_node.thread_name:
+                        thread = t
+                        break
+                data = thread.convert_to_json(next_url_list)
+                thread.send_data(data)
             else:
                 print 'we have no backup node....'
 
