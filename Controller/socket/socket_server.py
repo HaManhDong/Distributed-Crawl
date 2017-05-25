@@ -46,7 +46,7 @@ class Server:
 
         for worker in worker_list_exist:
             if count == len(base_url_list) - last_unit_list_length:
-                list_to_send = base_url_list[count + 1:]
+                list_to_send = base_url_list[count:]
             else:
                 list_to_send = base_url_list[count:(count + length_unit)]
             thread = None
@@ -74,7 +74,7 @@ class Server:
             }
             # data = thread.convert_to_json(list_to_send)
             thread.send_data(json.dumps(data))
-            count = count + length_unit + 1
+            count = count + length_unit
 
 
 if __name__ == '__main__':
