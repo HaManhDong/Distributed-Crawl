@@ -7,7 +7,7 @@ import os
 
 Base = declarative_base()
 FOLDER_PATH = os.path.dirname(os.path.abspath(__file__))
-engine = create_engine('sqlite:///' + FOLDER_PATH + '/db.sqlite')
+engine = create_engine('sqlite:///' + FOLDER_PATH + '/db.sqlite?check_same_thread=False')
 
 
 class Site_Crawl(Base):
@@ -59,10 +59,11 @@ class Worker_Node(Base):
     crawled_url_list = relationship('Crawled_Url_List', cascade="all, delete-orphan")
     waiting_url_list = relationship('Waiting_Url_List', cascade="all, delete-orphan")
 
+Session = scoped_session(sessionmaker(bind=engine))
 
 class Database_Service:
     def __init__(self):
-        self.session = scoped_session(sessionmaker(bind=engine))
+        self.session = Session()
 
     def add_woker(self, worker):
         self.session.add(worker)
